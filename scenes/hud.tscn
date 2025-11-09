@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3 uid="uid://iwmwn7ll1o0r"]
+
+[ext_resource type="Script" uid="uid://dq6a5r5i4nuw0" path="res://scripts/canvas_layer.gd" id="1_oo0fn"]
+[ext_resource type="FontFile" uid="uid://crax3bv0lu6r1" path="res://assets/fonts/PixelOperator8.ttf" id="2_5ysmq"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
+font = ExtResource("2_5ysmq")
+font_size = 25
+
+[sub_resource type="LabelSettings" id="LabelSettings_p57ef"]
+font = ExtResource("2_5ysmq")
+font_size = 25
+
+[sub_resource type="LabelSettings" id="LabelSettings_oo0fn"]
+font = ExtResource("2_5ysmq")
+font_size = 25
+
+[node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_oo0fn")
+
+[node name="EnergyLabel" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 46.0
+offset_right = 141.0
+offset_bottom = 81.0
+text = "ENERGY"
+label_settings = SubResource("LabelSettings_u5sy4")
+
+[node name="CoinsLabel" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 14.0
+offset_right = 89.0
+offset_bottom = 40.0
+theme_override_font_sizes/font_size = 35
+text = "COIN"
+label_settings = SubResource("LabelSettings_p57ef")
+
+[node name="FoodLabel" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 79.0
+offset_right = 98.0
+offset_bottom = 105.0
+text = "FOOD"
+label_settings = SubResource("LabelSettings_oo0fn")
