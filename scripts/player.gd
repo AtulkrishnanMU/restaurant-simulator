@@ -10,7 +10,7 @@ const MAX_RAMEN_CARRY = 1
 @onready var hud = get_tree().get_root().get_node("Game/HUD")
 @onready var energy_label = hud.get_node("EnergyLabel")
 
-var ramen_count := 6  # how many ramen the player is carrying (max 1)
+var ramen_count := 5  # how many ramen the player is carrying (max 1)
 var total_ramen := 5  # total ramen available in the world (for HUD display)
 
 var last_direction := "front"
