@@ -2,16 +2,13 @@ extends CharacterBody2D
 class_name Player
 
 const SPEED = 130.0
-const COIN_INCR = 50
-const MAX_ENERGY = 500
-const MAX_RAMEN_CARRY = 1
+const MAX_ENERGY = 1000
 
 @onready var anim = $AnimatedSprite2D
 @onready var hud = get_tree().get_root().get_node("Game/HUD")
 @onready var energy_label = hud.get_node("EnergyLabel")
 
-var ramen_count := 5  # how many ramen the player is carrying (max 1)
-var total_ramen := 5  # total ramen available in the world (for HUD display)
+var has_ramen := false  # whether the player is carrying ramen (max 1)
 
 var last_direction := "front"
 var coins := 0
@@ -28,14 +25,16 @@ func _process(delta):
 
 func _ready():
 	hud.update_coins(coins)
-	hud.update_ramen(total_ramen)  # renamed HUD label
 	update_energy_label()
 
 # --- Coin collection ---
 func collect_coin():
-	coins += COIN_INCR
+	var incr := 50
+	if hud and hud.has_method("get_coin_value"):
+		incr = hud.get_coin_value()
+	coins += incr
 	hud.update_coins(coins)
-	show_coin_popup()
+	show_coin_popup(incr)
 
 # --- Update HUD energy ---
 func update_energy_label():
@@ -43,18 +42,16 @@ func update_energy_label():
 
 # --- PICKUP ramen ---
 func pickup_ramen():
-	if ramen_count < MAX_RAMEN_CARRY:
-		ramen_count = 1
-		total_ramen = max(total_ramen - 1, 0)
-		hud.update_ramen(total_ramen)
-		print("Picked up ramen! Carrying:", ramen_count, "Total ramen left:", total_ramen)
+	if not has_ramen:
+		has_ramen = true
+		print("Picked up ramen! Carrying ramen.")
 	else:
 		print("Already carrying ramen!")
 
 # --- Drop ramen when given to NPC ---
 func give_ramen():
-	if ramen_count > 0:
-		ramen_count = 0
+	if has_ramen:
+		has_ramen = false
 		print("Delivered ramen to NPC!")
 
 # --- NO ENERGY popup ---
@@ -98,9 +95,9 @@ func show_energy_exhausted_popup():
 	)
 
 # --- Coin popup ---
-func show_coin_popup():
+func show_coin_popup(amount: int):
 	var popup = Label.new()
-	popup.text = "+%d" % COIN_INCR
+	popup.text = "+%d" % amount
 	popup.modulate = Color.YELLOW
 	popup.z_index = 100
 	var font = load("res://assets/fonts/PixelOperator8.ttf") as FontFile
@@ -154,7 +151,7 @@ func _physics_process(delta: float) -> void:
 
 	# === Animation selection ===
 	var ramen_suffix = ""
-	if ramen_count > 0:
+	if has_ramen:
 		ramen_suffix = "_RAMEN"  # add ramen variant if carrying one
 
 	if energy <= 0 and input_vector != Vector2.ZERO:

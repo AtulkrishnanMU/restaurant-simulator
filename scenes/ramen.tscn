@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3 uid="uid://qo4fk4kba0cy"]
+
+[ext_resource type="Script" uid="uid://b5nnin8dwef0n" path="res://scripts/ramen.gd" id="1_ramen"]
+[ext_resource type="Texture2D" uid="uid://dxv0x06uct288" path="res://assets/sprites/objects/ramen.png" id="2_d653l"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ramen"]
+radius = 11.01402
+
+[node name="Ramen" type="Node2D"]
+
+[node name="RamenArea" type="Area2D" parent="."]
+script = ExtResource("1_ramen")
+
+[node name="Sprite2D" type="Sprite2D" parent="RamenArea"]
+position = Vector2(0.07638836, -0.5625001)
+scale = Vector2(1.9027776, 1.9027778)
+texture = ExtResource("2_d653l")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="RamenArea"]
+scale = Vector2(0.72634697, 0.72634697)
+shape = SubResource("CircleShape2D_ramen")
+
+[connection signal="body_entered" from="RamenArea" to="RamenArea" method="_on_body_entered"]
+[connection signal="ready" from="RamenArea" to="RamenArea" method="_on_ready"]

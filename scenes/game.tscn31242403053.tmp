@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://bsefr8bi7cbfo"]
+[gd_scene load_steps=14 format=3 uid="uid://bsefr8bi7cbfo"]
 
 [ext_resource type="PackedScene" uid="uid://j4b3ex1eb6jp" path="res://scenes/player.tscn" id="1_uwrxv"]
 [ext_resource type="Texture2D" uid="uid://bsk8gl66mr6ra" path="res://assets/sprites/tilesets/plains.png" id="2_lbhrr"]
@@ -7,17 +7,10 @@
 [ext_resource type="Texture2D" uid="uid://cv5pt1y31mu8q" path="res://assets/sprites/objects/objects.png" id="4_p57ef"]
 [ext_resource type="PackedScene" uid="uid://iwmwn7ll1o0r" path="res://scenes/hud.tscn" id="6_p57ef"]
 [ext_resource type="PackedScene" uid="uid://dowwpun8wc77j" path="res://scenes/npc.tscn" id="7_gee14"]
-[ext_resource type="Script" uid="uid://cgq71okct6y74" path="res://scripts/npc_spawner.gd" id="8_npcspawner"]
-[ext_resource type="PackedScene" uid="uid://qo4fk4kba0cy" path="res://scenes/ramen.tscn" id="9_vtaks"]
-[ext_resource type="Script" uid="uid://cr3hexsmmgqg8" path="res://scripts/chair_manager.gd" id="10_chairmanager"]
-[ext_resource type="PackedScene" uid="uid://fcemrw1w5u35" path="res://scenes/chair.tscn" id="11_kvpfn"]
-[ext_resource type="Script" uid="uid://qdh433bjduc1" path="res://scripts/popularity_manager.gd" id="12_popularity"]
+[ext_resource type="Script" uid="uid://ddly1hkb27cxj" path="res://scripts/npc_spawner.gd" id="8_gee14"]
 
 [sub_resource type="GDScript" id="GDScript_p57ef"]
 script/source = "extends Node2D
-
-func _on_ready() -> void:
-	print(\"GAME BEGAN\")
 "
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_u5sy4"]
@@ -105,7 +98,8 @@ y_sort_enabled = true
 script = SubResource("GDScript_p57ef")
 
 [node name="TileMap" type="TileMap" parent="."]
-z_index = -20
+visible = false
+z_index = -1
 position = Vector2(51, 4)
 tile_set = SubResource("TileSet_vtaks")
 format = 2
@@ -125,50 +119,13 @@ position_smoothing_enabled = true
 
 [node name="HUD" parent="." instance=ExtResource("6_p57ef")]
 
-[node name="PopularityManager" type="Node" parent="."]
-script = ExtResource("12_popularity")
-
-[node name="ChairManager" type="Node2D" parent="."]
-script = ExtResource("10_chairmanager")
-
-[node name="NPCSpawner" type="Node2D" parent="."]
-script = ExtResource("8_npcspawner")
+[node name="NPCSpawner" type="Node" parent="."]
+script = ExtResource("8_gee14")
 npc_scene = ExtResource("7_gee14")
-
-[node name="Ramen" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-129, 109)
-
-[node name="Ramen2" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-61, 130)
-
-[node name="Ramen3" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-193, 145)
-
-[node name="Ramen4" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-225, 96)
-
-[node name="Ramen5" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-184, 59)
-
-[node name="Ramen6" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-103, 66)
-
-[node name="Chair" parent="." instance=ExtResource("11_kvpfn")]
-position = Vector2(119, 26)
-
-[node name="Ramen7" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-183, 113)
-
-[node name="Ramen8" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-245, 50)
-
-[node name="Ramen9" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-202, 17)
-
-[node name="Ramen10" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-141, 27)
-
-[node name="Ramen11" parent="." instance=ExtResource("9_vtaks")]
-position = Vector2(-137, 79)
-
-[connection signal="ready" from="." to="." method="_on_ready"]
+min_spawn_interval = 0.0
+max_spawn_interval = 3.0
+max_npc_count = null
+spawn_margin = null
+target_margin_left = null
+target_margin_right = null
+target_y_offset = null

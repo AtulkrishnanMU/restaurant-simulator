@@ -1,7 +1,8 @@
-[gd_scene load_steps=10 format=3 uid="uid://dowwpun8wc77j"]
+[gd_scene load_steps=11 format=3 uid="uid://dowwpun8wc77j"]
 
-[ext_resource type="Script" uid="uid://kklpr2rwokx8" path="res://npc.gd" id="1_abqhh"]
+[ext_resource type="Script" uid="uid://kklpr2rwokx8" path="res://scripts/npc.gd" id="1_abqhh"]
 [ext_resource type="Texture2D" uid="uid://ddnjb8wnwgyku" path="res://assets/sprites/knight.png" id="1_nh2m4"]
+[ext_resource type="PackedScene" uid="uid://bm4srd2x73dk7" path="res://scenes/coin.tscn" id="2_rv78h"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_abqhh"]
 atlas = ExtResource("1_nh2m4")
@@ -35,7 +36,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_4wlns")
 }],
 "loop": true,
-"name": &"default",
+"name": &"WALK_FRONT",
 "speed": 10.0
 }]
 
@@ -46,12 +47,16 @@ radius = 6.0827627
 radius = 8.0
 
 [node name="NPC" type="CharacterBody2D"]
+scale = Vector2(2.3340054, 2.3340054)
 script = ExtResource("1_abqhh")
+coin_scene = ExtResource("2_rv78h")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_tl2vt")
-autoplay = "default"
-frame_progress = 0.22666992
+animation = &"WALK_FRONT"
+autoplay = "WALK_FRONT"
+frame = 2
+frame_progress = 0.6167616
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(0, 3)

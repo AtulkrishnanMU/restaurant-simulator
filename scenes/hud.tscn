@@ -5,15 +5,15 @@
 
 [sub_resource type="LabelSettings" id="LabelSettings_u5sy4"]
 font = ExtResource("2_5ysmq")
-font_size = 25
+font_size = 15
 
 [sub_resource type="LabelSettings" id="LabelSettings_p57ef"]
 font = ExtResource("2_5ysmq")
-font_size = 25
+font_size = 15
 
 [sub_resource type="LabelSettings" id="LabelSettings_oo0fn"]
 font = ExtResource("2_5ysmq")
-font_size = 25
+font_size = 15
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1_oo0fn")
@@ -35,10 +35,10 @@ theme_override_font_sizes/font_size = 35
 text = "COIN"
 label_settings = SubResource("LabelSettings_p57ef")
 
-[node name="FoodLabel" type="Label" parent="."]
+[node name="PopularityLabel" type="Label" parent="."]
 offset_left = 10.0
-offset_top = 79.0
-offset_right = 98.0
-offset_bottom = 105.0
-text = "FOOD"
+offset_top = 82.0
+offset_right = 150.0
+offset_bottom = 108.0
+text = "POPULARITY: 0"
 label_settings = SubResource("LabelSettings_oo0fn")
