@@ -1,6 +1,7 @@
 extends CharacterBody2D
 class_name NPC
 
+@export var cash_scene: PackedScene
 @export var coin_scene: PackedScene
 @export var drop_delay := 1.5
 @export var ramen_needed := 3
@@ -25,6 +26,9 @@ var target_position: Vector2  # Where the NPC stops (chair position)
 var wait_check_timer := 0.0  # Timer for checking chairs while waiting
 const WAIT_CHECK_INTERVAL := 0.5  # Check for chairs every 0.5 seconds when waiting
 
+# Store how many ramens this NPC originally needed so payout can be calculated
+var initial_ramen_needed: int = 0
+
 # Random thank-you messages
 const THANK_MESSAGES = [
 	"Yum!", "Delicious!", "Arigatou!", "So tasty!", "Perfect!",
@@ -41,6 +45,10 @@ func _ready():
 	else:
 		print("⚠️ NPC missing InteractionArea!")
 	YSorter.apply(self)
+	
+	# Capture initial ramen requirement set by spawner
+	if initial_ramen_needed == 0:
+		initial_ramen_needed = ramen_needed
 	
 	# Find a free chair
 	find_chair()
@@ -156,7 +164,8 @@ func _on_body_entered(body):
 		if ramen_needed <= 0:
 			await get_tree().create_timer(drop_delay).timeout
 			show_thank_popup()
-			drop_coin()
+			drop_cash()
+			drop_tip_coins()
 			# Notify popularity manager that NPC was served
 			var game_node = get_tree().get_root().get_node("Game")
 			var popularity_manager = game_node.get_node_or_null("PopularityManager")
@@ -194,12 +203,25 @@ func start_eating():
 			speech_bubble.queue_free()
 		speech_bubble = null
 
-func drop_coin():
+func drop_cash():
+	if cash_scene:
+		# Drop one cash per ramen served; each cash's value is defined by HUD price
+		var drops: int = max(1, initial_ramen_needed)
+		for i in range(drops):
+			var cash = cash_scene.instantiate()
+			cash.position = global_position + Vector2(randi_range(-40, 40), randi_range(10, 20))
+			get_parent().add_child(cash)
+			print("Cash dropped at:", cash.position)
+
+func drop_tip_coins():
 	if coin_scene:
-		var coin = coin_scene.instantiate()
-		coin.position = global_position + Vector2(randi_range(-40, 40), randi_range(10, 20))
-		get_parent().add_child(coin)
-		print("Coin dropped at:", coin.position)
+		var tip_count: int = randi_range(0, 3)
+		if tip_count > 0:
+			for i in range(tip_count):
+				var coin = coin_scene.instantiate()
+				coin.position = global_position + Vector2(randi_range(-40, 40), randi_range(-10, 10))
+				get_parent().add_child(coin)
+			show_tip_popup()
 
 func show_thank_popup():
 	var message = THANK_MESSAGES.pick_random()
@@ -210,6 +232,19 @@ func show_thank_popup():
 	var tween = create_tween()
 	tween.tween_property(panel, "position:y", panel.position.y - 35, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(panel, "modulate:a", 0.0, 1.2).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_callback(func(): panel.queue_free())
+
+func show_tip_popup():
+	var panel = _create_speech_panel("Customer just tipped you!", Vector2(320, 32))
+	var hud = get_tree().get_root().get_node("Game/HUD")
+	hud.add_child(panel)
+	var screen_size: Vector2 = get_viewport_rect().size
+	var margin: Vector2 = Vector2(16, 16)
+	panel.position = Vector2(screen_size.x - margin.x - panel.size.x, screen_size.y - margin.y - panel.size.y)
+	var tween = create_tween()
+	tween.tween_interval(5.0)
+	tween.tween_property(panel, "position:y", panel.position.y - 35, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(panel, "modulate:a", 0.0, 1.0).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
 	tween.tween_callback(func(): panel.queue_free())
 
 func start_leaving():

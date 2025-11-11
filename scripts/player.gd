@@ -11,7 +11,7 @@ const MAX_ENERGY = 1000
 var has_ramen := false  # whether the player is carrying ramen (max 1)
 
 var last_direction := "front"
-var coins := 0
+var cash := 0
 var energy := MAX_ENERGY
 var steps := 0
 var idle_timer := 0.0
@@ -24,17 +24,19 @@ func _process(delta):
 	YSorter.apply(self)
 
 func _ready():
-	hud.update_coins(coins)
+	hud.update_cash(cash)
 	update_energy_label()
 
-# --- Coin collection ---
-func collect_coin():
-	var incr := 50
-	if hud and hud.has_method("get_coin_value"):
-		incr = hud.get_coin_value()
-	coins += incr
-	hud.update_coins(coins)
-	show_coin_popup(incr)
+# --- Cash collection ---
+func collect_cash(amount: int = -1):
+	var incr: int = amount
+	if incr <= 0:
+		incr = 50
+		if hud and hud.has_method("get_cash_value"):
+			incr = hud.get_cash_value()
+	cash += incr
+	hud.update_cash(cash)
+	show_cash_popup(incr)
 
 # --- Update HUD energy ---
 func update_energy_label():
@@ -94,8 +96,8 @@ func show_energy_exhausted_popup():
 		panel.queue_free()
 	)
 
-# --- Coin popup ---
-func show_coin_popup(amount: int):
+# --- Cash popup ---
+func show_cash_popup(amount: int):
 	var popup = Label.new()
 	popup.text = "+%d" % amount
 	popup.modulate = Color.YELLOW

@@ -154,7 +154,7 @@ position = Vector2(-184, 59)
 position = Vector2(-103, 66)
 
 [node name="Chair" parent="." instance=ExtResource("11_kvpfn")]
-position = Vector2(-95, 21)
+position = Vector2(119, 26)
 
 [node name="Ramen7" parent="." instance=ExtResource("9_vtaks")]
 position = Vector2(-183, 113)
@@ -170,8 +170,5 @@ position = Vector2(-141, 27)
 
 [node name="Ramen11" parent="." instance=ExtResource("9_vtaks")]
 position = Vector2(-137, 79)
-
-[node name="NPC" parent="." instance=ExtResource("7_gee14")]
-position = Vector2(-51, 21)
 
 [connection signal="ready" from="." to="." method="_on_ready"]

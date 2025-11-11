@@ -1,0 +1,61 @@
+[gd_scene load_steps=9 format=3 uid="uid://dvfvv6y5ubh1k"]
+
+[ext_resource type="Script" uid="uid://bjh68rk0pm4tp" path="res://scripts/cash.gd" id="1_i64fm"]
+[ext_resource type="Texture2D" uid="uid://cm6ywc6ojeoik" path="res://assets/sprites/CASH.png" id="2_i64fm"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_11l1o"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(0, 0, 368, 255)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_d14el"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(368, 0, 368, 255)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1ikuy"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(736, 0, 368, 255)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wnlwo"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(1104, 0, 368, 255)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_ls27i"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_11l1o")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_d14el")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1ikuy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wnlwo")
+}],
+"loop": true,
+"name": &"FLOAT",
+"speed": 10.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_i64fm"]
+radius = 7.0
+
+[node name="Cash" type="Node2D"]
+
+[node name="CashArea" type="Area2D" parent="."]
+script = ExtResource("1_i64fm")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CashArea"]
+position = Vector2(0.8647051, 0.90624964)
+scale = Vector2(0.071323514, 0.07132353)
+sprite_frames = SubResource("SpriteFrames_ls27i")
+animation = &"FLOAT"
+autoplay = "FLOAT"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CashArea"]
+shape = SubResource("CircleShape2D_i64fm")
+
+[connection signal="body_entered" from="CashArea" to="CashArea" method="_on_body_entered"]
+[connection signal="ready" from="CashArea" to="CashArea" method="_on_ready"]

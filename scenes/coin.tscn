@@ -1,23 +1,55 @@
-[gd_scene load_steps=9 format=3 uid="uid://bm4srd2x73dk7"]
+[gd_scene load_steps=17 format=3 uid="uid://bm4srd2x73dk7"]
 
-[ext_resource type="Script" uid="uid://bjh68rk0pm4tp" path="res://scripts/cash.gd" id="1_i64fm"]
-[ext_resource type="Texture2D" uid="uid://cm6ywc6ojeoik" path="res://assets/sprites/CASH.png" id="2_i64fm"]
+[ext_resource type="Script" uid="uid://b7njep5bnq7b" path="res://scripts/coin.gd" id="1_i64fm"]
+[ext_resource type="Texture2D" uid="uid://c54chiylqfi4v" path="res://assets/sprites/coin.png" id="2_i64fm"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_11l1o"]
 atlas = ExtResource("2_i64fm")
-region = Rect2(0, 0, 368, 255)
+region = Rect2(0, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_d14el"]
 atlas = ExtResource("2_i64fm")
-region = Rect2(368, 0, 368, 255)
+region = Rect2(16, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_1ikuy"]
 atlas = ExtResource("2_i64fm")
-region = Rect2(736, 0, 368, 255)
+region = Rect2(32, 0, 16, 16)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wnlwo"]
 atlas = ExtResource("2_i64fm")
-region = Rect2(1104, 0, 368, 255)
+region = Rect2(48, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jig8b"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(64, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xmuha"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(80, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kfxoj"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(96, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_jsmju"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(112, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s0mny"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(128, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7cc30"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(144, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rojmm"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(160, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ls27i"]
+atlas = ExtResource("2_i64fm")
+region = Rect2(176, 0, 16, 16)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_ls27i"]
 animations = [{
@@ -33,6 +65,30 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_wnlwo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jig8b")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xmuha")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kfxoj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_jsmju")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s0mny")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7cc30")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rojmm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ls27i")
 }],
 "loop": true,
 "name": &"FLOAT",
@@ -42,20 +98,22 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_i64fm"]
 radius = 7.0
 
-[node name="Cash" type="Node2D"]
+[node name="Coin" type="Node2D"]
 
-[node name="CashArea" type="Area2D" parent="."]
+[node name="CoinArea" type="Area2D" parent="."]
 script = ExtResource("1_i64fm")
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CashArea"]
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CoinArea"]
 position = Vector2(0.8647051, 0.90624964)
-scale = Vector2(0.071323514, 0.07132353)
+scale = Vector2(1.5125548, 1.5125551)
 sprite_frames = SubResource("SpriteFrames_ls27i")
 animation = &"FLOAT"
 autoplay = "FLOAT"
+frame_progress = 0.8229827
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="CashArea"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="CoinArea"]
+position = Vector2(1, 1)
 shape = SubResource("CircleShape2D_i64fm")
 
-[connection signal="body_entered" from="CashArea" to="CashArea" method="_on_body_entered"]
-[connection signal="ready" from="CashArea" to="CashArea" method="_on_ready"]
+[connection signal="body_entered" from="CoinArea" to="CoinArea" method="_on_body_entered"]
+[connection signal="ready" from="CoinArea" to="CoinArea" method="_on_ready"]

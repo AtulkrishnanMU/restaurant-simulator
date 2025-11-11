@@ -1,17 +1,17 @@
 extends CanvasLayer
 
-var coins_label: Label
+var cash_label: Label
 var popularity_label: Label
-var coin_value_label: Label
-var coin_slider: HSlider
-var coin_value := 50
+var cash_value_label: Label
+var cash_slider: HSlider
+var cash_value := 50
 
 const PRICE_TEXT = "PRICE: %d¥"
 
 func _ready():
-	coins_label = $CoinsLabel  # Now guaranteed to exist at _ready
+	cash_label = $CashLabel  # Now guaranteed to exist at _ready
 	popularity_label = $PopularityLabel
-	update_coins(0)  # Show initial value
+	update_cash(0)  # Show initial value
 	update_popularity(0)  # Show initial popularity
 	
 	# Connect to popularity manager
@@ -20,75 +20,75 @@ func _ready():
 	if popularity_manager:
 		popularity_manager.popularity_changed.connect(update_popularity)
 
-	# Create coin value UI (slider + label) programmatically
+	# Create cash value UI (slider + label) programmatically
 	# Slider controls how much money each NPC drop is worth
-	coin_value_label = Label.new()
-	coin_value_label.text = PRICE_TEXT % coin_value
+	cash_value_label = Label.new()
+	cash_value_label.text = PRICE_TEXT % cash_value
 	# Top-center anchor for label
-	coin_value_label.anchor_left = 0.5
-	coin_value_label.anchor_right = 0.5
-	coin_value_label.anchor_top = 0.0
-	coin_value_label.anchor_bottom = 0.0
-	coin_value_label.offset_left = -60
-	coin_value_label.offset_right = 60
-	coin_value_label.offset_top = 8
-	coin_value_label.offset_bottom = 24
-	coin_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	cash_value_label.anchor_left = 0.5
+	cash_value_label.anchor_right = 0.5
+	cash_value_label.anchor_top = 0.0
+	cash_value_label.anchor_bottom = 0.0
+	cash_value_label.offset_left = -60
+	cash_value_label.offset_right = 60
+	cash_value_label.offset_top = 8
+	cash_value_label.offset_bottom = 24
+	cash_value_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var price_font := load("res://assets/fonts/PixelOperator8.ttf") as FontFile
 	if price_font:
-		coin_value_label.add_theme_font_override("font", price_font)
-		coin_value_label.add_theme_font_size_override("font_size", 15)
+		cash_value_label.add_theme_font_override("font", price_font)
+		cash_value_label.add_theme_font_size_override("font_size", 15)
 	else:
-		coin_value_label.add_theme_font_size_override("font_size", 25)
-	add_child(coin_value_label)
+		cash_value_label.add_theme_font_size_override("font_size", 25)
+	add_child(cash_value_label)
 
-	coin_slider = HSlider.new()
-	coin_slider.min_value = 20
-	coin_slider.max_value = 50
-	coin_slider.step = 5
-	coin_slider.value = coin_value
+	cash_slider = HSlider.new()
+	cash_slider.min_value = 20
+	cash_slider.max_value = 50
+	cash_slider.step = 5
+	cash_slider.value = cash_value
 	# Disable keyboard focus so arrow keys won't move it
-	coin_slider.focus_mode = Control.FOCUS_NONE
+	cash_slider.focus_mode = Control.FOCUS_NONE
 	# Top-center anchor for slider
-	coin_slider.anchor_left = 0.5
-	coin_slider.anchor_right = 0.5
-	coin_slider.anchor_top = 0.0
-	coin_slider.anchor_bottom = 0.0
-	coin_slider.offset_left = -100
-	coin_slider.offset_right = 100
-	coin_slider.offset_top = 28
-	coin_slider.offset_bottom = 44
-	coin_slider.value_changed.connect(_on_coin_slider_value_changed)
-	add_child(coin_slider)
+	cash_slider.anchor_left = 0.5
+	cash_slider.anchor_right = 0.5
+	cash_slider.anchor_top = 0.0
+	cash_slider.anchor_bottom = 0.0
+	cash_slider.offset_left = -100
+	cash_slider.offset_right = 100
+	cash_slider.offset_top = 28
+	cash_slider.offset_bottom = 44
+	cash_slider.value_changed.connect(_on_cash_slider_value_changed)
+	add_child(cash_slider)
 
-func update_coins(amount: int) -> void:
-	if coins_label:
-		coins_label.text = "CASH: %d" % amount
+func update_cash(amount: int) -> void:
+	if cash_label:
+		cash_label.text = "CASH: %d" % amount
 
 func update_popularity(popularity: int) -> void:
 	if popularity_label:
 		popularity_label.text = "POPULARITY: %d" % popularity
 	# Increase the slider's max with popularity (initially 50, grows by popularity)
-	if coin_slider:
-		coin_slider.max_value = 50 + popularity
-		var snapped: int = int(round(coin_slider.max_value / 5.0) * 5)
-		coin_slider.max_value = snapped
+	if cash_slider:
+		cash_slider.max_value = 50 + popularity
+		var snapped: int = int(round(cash_slider.max_value / 5.0) * 5)
+		cash_slider.max_value = snapped
 		# Ensure current value stays within bounds and snapped to nearest 5
-		var clamped: float = clamp(float(coin_slider.value), float(coin_slider.min_value), float(coin_slider.max_value))
+		var clamped: float = clamp(float(cash_slider.value), float(cash_slider.min_value), float(cash_slider.max_value))
 		var snapped_val: int = int(round(clamped / 5.0) * 5)
-		if int(coin_slider.value) != snapped_val:
-			coin_slider.value = snapped_val
-		coin_value = snapped_val
-		if coin_value_label:
-			coin_value_label.text = PRICE_TEXT % coin_value
+		if int(cash_slider.value) != snapped_val:
+			cash_slider.value = snapped_val
+		cash_value = snapped_val
+		if cash_value_label:
+			cash_value_label.text = PRICE_TEXT % cash_value
 
-func get_coin_value() -> int:
-	return coin_value
+func get_cash_value() -> int:
+	return cash_value
 
-func _on_coin_slider_value_changed(value: float) -> void:
+func _on_cash_slider_value_changed(value: float) -> void:
 	var snapped: int = int(round(value / 5.0) * 5)
-	if snapped != int(coin_slider.value):
-		coin_slider.value = snapped
-	coin_value = snapped
-	if coin_value_label:
-		coin_value_label.text = PRICE_TEXT % coin_value
+	if snapped != int(cash_slider.value):
+		cash_slider.value = snapped
+	cash_value = snapped
+	if cash_value_label:
+		cash_value_label.text = PRICE_TEXT % cash_value

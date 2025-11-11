@@ -26,13 +26,13 @@ offset_bottom = 81.0
 text = "ENERGY"
 label_settings = SubResource("LabelSettings_u5sy4")
 
-[node name="CoinsLabel" type="Label" parent="."]
+[node name="CashLabel" type="Label" parent="."]
 offset_left = 8.0
 offset_top = 14.0
 offset_right = 89.0
 offset_bottom = 40.0
 theme_override_font_sizes/font_size = 35
-text = "COIN"
+text = "CASH"
 label_settings = SubResource("LabelSettings_p57ef")
 
 [node name="PopularityLabel" type="Label" parent="."]
