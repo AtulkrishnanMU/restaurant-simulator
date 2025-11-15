@@ -84,4 +84,3 @@ func free_chair():
 	print("Chair at ", global_position, " is now free")
 	is_occupied = false
 	occupied_by = null
-

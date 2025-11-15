@@ -14,6 +14,7 @@ var current_npcs := 0
 var spawn_timer := 0.0
 var next_spawn_time := 0.0
 var popularity_manager: PopularityManager = null
+var spawning_enabled: bool = false
 
 func _ready():
 	# Load NPC scene if not set in editor
@@ -35,6 +36,8 @@ func _ready():
 	# Don't spawn initial NPCs - let them spawn randomly over time
 
 func _process(delta):
+	if not spawning_enabled:
+		return
 	spawn_timer += delta
 	
 	# Update NPC count (in case NPCs were removed manually)
@@ -108,3 +111,10 @@ func get_spawn_intervals() -> Vector2:
 	
 	return Vector2(min_interval, max_interval)
 
+func enable_spawning(initial_delay: float = 2.0) -> void:
+	# Enable NPC spawning after first ramen is made
+	spawning_enabled = true
+	spawn_timer = 0.0
+	var intervals = get_spawn_intervals()
+	# Start with a short initial delay to give feedback quickly
+	next_spawn_time = clamp(initial_delay, intervals.x, intervals.y)

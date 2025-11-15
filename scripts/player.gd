@@ -1,7 +1,7 @@
 extends CharacterBody2D
 class_name Player
 
-const SPEED = 130.0
+const SPEED = 200.0
 const MAX_ENERGY = 1000
 
 @onready var anim = $AnimatedSprite2D
@@ -19,9 +19,6 @@ var idle_timer := 0.0
 # === COOLDOWN SYSTEM ===
 var energy_popup_cooldown := 0.0
 const ENERGY_POPUP_COOLDOWN_TIME := 1.0
-
-func _process(delta):
-	YSorter.apply(self)
 
 func _ready():
 	hud.update_cash(cash)
