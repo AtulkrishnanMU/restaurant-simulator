@@ -1,11 +1,14 @@
-[gd_scene load_steps=5 format=3 uid="uid://b5hbre3ub645y"]
+[gd_scene load_steps=6 format=3 uid="uid://b5hbre3ub645y"]
 
 [ext_resource type="Script" uid="uid://dm80vl1y4h2ew" path="res://scripts/ramen_maker.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://c8g6xhxijbo0l" path="res://assets/sprites/objects/ramen_maker.png" id="2_f08qh"]
 [ext_resource type="Script" uid="uid://tdrxjwoxbi8p" path="res://scripts/cook_bar.gd" id="3_cookbar"]
 
 [sub_resource type="RectangleShape2D" id="1_shape"]
-size = Vector2(39.802498, 35.947975)
+size = Vector2(39.100067, 35.621872)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_f08qh"]
+size = Vector2(60, 71)
 
 [node name="RamenMaker" type="Area2D"]
 script = ExtResource("1_script")
@@ -16,9 +19,14 @@ scale = Vector2(0.13316582, 0.1342975)
 texture = ExtResource("2_f08qh")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0.5000005, 14.999999)
-scale = Vector2(1.298633, -0.84697646)
+position = Vector2(1, 4.7683716e-07)
+scale = Vector2(1.3215349, -1.7603781)
 shape = SubResource("1_shape")
+
+[node name="PlacementShape" type="CollisionShape2D" parent="."]
+position = Vector2(1, 0.5)
+shape = SubResource("RectangleShape2D_f08qh")
+disabled = true
 
 [node name="CookBar" type="Node2D" parent="."]
 script = ExtResource("3_cookbar")

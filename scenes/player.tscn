@@ -572,11 +572,12 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_1jxqw"]
-radius = 7.0
+radius = 8.541654
 
 [node name="Player" type="CharacterBody2D"]
-script = ExtResource("1_g2els")
+scale = Vector2(2.074545, 2.074545)
 collision_mask = 3
+script = ExtResource("1_g2els")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(1, -12)
@@ -585,10 +586,6 @@ animation = &"WALK_SIDE_RAMEN"
 autoplay = "IDLE_FRONT"
 frame_progress = 0.37274635
 
-[node name="CollisionShape2D2" type="CollisionShape2D" parent="."]
-position = Vector2(1, 1)
-shape = SubResource("CircleShape2D_1jxqw")
-
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1, -9)
+position = Vector2(1.9281337, -1.9281337)
 shape = SubResource("CircleShape2D_1jxqw")

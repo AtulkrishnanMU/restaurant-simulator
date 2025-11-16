@@ -7,11 +7,13 @@ const MAX_ENERGY = 1000
 @onready var anim = $AnimatedSprite2D
 @onready var hud = get_tree().get_root().get_node("Game/HUD")
 @onready var energy_label = hud.get_node("EnergyLabel")
+var walk_player: AudioStreamPlayer2D
+var walk_pitch_timer: float = 0.0
 
 var has_ramen := false  # whether the player is carrying ramen (max 1)
 
 var last_direction := "front"
-var cash := 0
+var cash := 3000
 var energy := MAX_ENERGY
 var steps := 0
 var idle_timer := 0.0
@@ -23,6 +25,13 @@ const ENERGY_POPUP_COOLDOWN_TIME := 1.0
 func _ready():
 	hud.update_cash(cash)
 	update_energy_label()
+	# Prepare walking audio
+	walk_player = AudioStreamPlayer2D.new()
+	walk_player.bus = "Master"
+	var walk_path := "res://assets/sounds/walking.mp3"
+	if ResourceLoader.exists(walk_path):
+		walk_player.stream = load(walk_path)
+		add_child(walk_player)
 
 # --- Cash collection ---
 func collect_cash(amount: int = -1):
@@ -33,7 +42,29 @@ func collect_cash(amount: int = -1):
 			incr = hud.get_cash_value()
 	cash += incr
 	hud.update_cash(cash)
-	show_cash_popup(incr)
+	show_cash_popup(incr, true)
+
+func get_cash() -> int:
+	return cash
+
+func can_afford(cost: int) -> bool:
+	return cash >= cost
+
+func spend_cash(cost: int) -> bool:
+	if cash < cost:
+		return false
+	cash -= cost
+	if hud:
+		hud.update_cash(cash)
+	# Play a loss sound when cash is successfully deducted
+	var lose_path := "res://assets/sounds/lose_cash.mp3"
+	if ResourceLoader.exists(lose_path):
+		var s := AudioStreamPlayer.new()
+		s.stream = load(lose_path)
+		add_child(s)
+		s.play()
+		s.finished.connect(s.queue_free)
+	return true
 
 # --- Update HUD energy ---
 func update_energy_label():
@@ -94,22 +125,27 @@ func show_energy_exhausted_popup():
 	)
 
 # --- Cash popup ---
-func show_cash_popup(amount: int):
+func show_cash_popup(amount: int, incr: bool):
 	var popup = Label.new()
-	popup.text = "+%d" % amount
-	popup.modulate = Color.YELLOW
+	if incr:
+		popup.text = "+%d" % amount
+		popup.modulate = Color.YELLOW
+	else:
+		popup.text = "-%d" % amount
+		popup.modulate = Color("#6e1512")
 	popup.z_index = 100
 	var font = load("res://assets/fonts/PixelOperator8.ttf") as FontFile
 	if font:
 		popup.add_theme_font_override("font", font)
-		popup.add_theme_font_size_override("font_size", 28)
+		popup.add_theme_font_size_override("font_size", 18)
 	else:
-		popup.add_theme_font_size_override("font_size", 32)
+		popup.add_theme_font_size_override("font_size", 26)
 	var screen_pos = get_viewport_transform() * global_position
-	popup.position = screen_pos + Vector2(-25, -50)
+	popup.position = screen_pos + Vector2(25, -50)
 	hud.add_child(popup)
 	var tween = create_tween()
-	tween.tween_property(popup, "position:y", popup.position.y - 45, 1.0)\
+	var target_y: float = popup.position.y + (-45 if incr else 45)
+	tween.tween_property(popup, "position:y", target_y, 1.0)\
 		.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(popup, "modulate:a", 0.0, 1.0)\
 		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
@@ -147,6 +183,23 @@ func _physics_process(delta: float) -> void:
 	else:
 		velocity = Vector2.ZERO
 	move_and_slide()
+	# Walking sound: play while actually moving with energy
+	if walk_player and walk_player.stream:
+		var is_moving := energy > 0 and input_vector != Vector2.ZERO
+		if is_moving:
+			if not walk_player.playing:
+				walk_player.pitch_scale = randf_range(0.9, 1.1)
+				walk_player.play()
+		else:
+			if walk_player.playing:
+				walk_player.stop()
+			walk_pitch_timer = 0.0
+		# While walking, randomly vary pitch about once per second
+		if walk_player.playing:
+			walk_pitch_timer += delta
+			if walk_pitch_timer >= 1.0:
+				walk_pitch_timer = 0.0
+				walk_player.pitch_scale = randf_range(0.9, 1.1)
 
 	# === Animation selection ===
 	var ramen_suffix = ""

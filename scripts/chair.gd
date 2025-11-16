@@ -1,6 +1,8 @@
 extends Area2D
 class_name Chair
 
+@export var placement_radius: float = 24.0
+
 var is_occupied := false
 var occupied_by: NPC = null
 var is_being_dragged := false
@@ -8,56 +10,57 @@ var drag_offset := Vector2.ZERO
 
 func _ready():
 	# Connect body entered/exited to detect NPCs
-	connect("body_entered", Callable(self, "_on_body_entered"))
-	connect("body_exited", Callable(self, "_on_body_exited"))
+	if not is_connected("body_entered", Callable(self, "_on_body_entered")):
+		connect("body_entered", Callable(self, "_on_body_entered"))
+	if not is_connected("body_exited", Callable(self, "_on_body_exited")):
+		connect("body_exited", Callable(self, "_on_body_exited"))
 	# Enable input processing for mouse
 	input_pickable = true
+	# Self-register with ChairManager so NPCs can find this chair when placed at runtime
+	var game = get_tree().get_root().get_node("Game")
+	if game:
+		var mgr = game.get_node_or_null("ChairManager")
+		if mgr and "register_chair" in mgr:
+			mgr.register_chair(self)
+			# Also refresh scanning for safety
+			if "find_all_chairs" in mgr:
+				mgr.find_all_chairs()
+	# Unregister when exiting tree (safe even if tree is already being freed)
+	self.tree_exited.connect(func(node: Node):
+		# 'node' is this Chair, but its tree may be null already; use cached manager pattern
+		var g_tree := node.get_tree()
+		if not g_tree:
+			return
+		var g_root := g_tree.get_root()
+		if not g_root:
+			return
+		var game_node := g_root.get_node("Game")
+		if not game_node:
+			return
+		var m = game_node.get_node_or_null("ChairManager")
+		if m and "unregister_chair" in m:
+			m.unregister_chair(node)
+	)
 
 func _input(event):
-	# Only allow dragging if not occupied
-	if is_occupied:
-		if is_being_dragged:
-			is_being_dragged = false
-		return
-	
-	# Check for mouse button press
-	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			if event.pressed:
-				# Check if mouse is clicking on this chair
-				var mouse_pos = get_global_mouse_position()
-				var collision_shape = $CollisionShape2D
-				if collision_shape:
-					var shape = collision_shape.shape as RectangleShape2D
-					if shape:
-						var half_size = shape.size / 2.0
-						var local_mouse = to_local(mouse_pos)
-						# Check if mouse is within chair bounds
-						if abs(local_mouse.x) <= half_size.x and abs(local_mouse.y) <= half_size.y:
-							# Start dragging
-							is_being_dragged = true
-							drag_offset = global_position - mouse_pos
-							get_viewport().set_input_as_handled()
-			else:
-				# Stop dragging when mouse button released
-				if is_being_dragged:
-					is_being_dragged = false
-	
-	# Handle dragging motion
-	if is_being_dragged and event is InputEventMouseMotion:
-		var mouse_pos = get_global_mouse_position()
-		global_position = mouse_pos + drag_offset
-		get_viewport().set_input_as_handled()
+	# Legacy drag logic disabled in favor of UI-driven relocation.
+	pass
 
-func _process(delta):
-	# Update position while dragging (backup method)
-	if is_being_dragged and not is_occupied:
-		var mouse_pos = get_global_mouse_position()
-		global_position = mouse_pos + drag_offset
-		
-		# Stop dragging if mouse button released
-		if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-			is_being_dragged = false
+func _process(_delta):
+	pass
+
+func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
+	# Use the same ghost-placement relocation as the ramen maker.
+	# Do not allow moving while occupied by an NPC.
+	if is_occupied:
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var game := get_tree().get_root().get_node_or_null("Game")
+		if not game:
+			return
+		var ui := game.get_node_or_null("UI")
+		if ui and "start_relocate_existing" in ui:
+			ui.start_relocate_existing(self)
 
 func _on_body_entered(body):
 	if body is NPC and not is_occupied:

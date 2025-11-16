@@ -1,0 +1,123 @@
+[gd_scene load_steps=5 format=3 uid="uid://c2c2sfsue7bdd"]
+
+[ext_resource type="Script" uid="uid://yger2msqr3cu" path="res://scripts/shop_menu.gd" id="1_qb5ry"]
+[ext_resource type="PackedScene" uid="uid://fcemrw1w5u35" path="res://scenes/chair.tscn" id="2_chair"]
+[ext_resource type="PackedScene" uid="uid://b5hbre3ub645y" path="res://scenes/ramen_maker.tscn" id="3_maker"]
+[ext_resource type="FontFile" uid="uid://crax3bv0lu6r1" path="res://assets/fonts/PixelOperator8.ttf" id="4_font"]
+
+[node name="ShopMenu" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_qb5ry")
+
+[node name="Dim" type="ColorRect" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.5)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -110.0
+offset_right = 140.0
+offset_bottom = 110.0
+
+[node name="VBox" type="VBoxContainer" parent="Panel"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="ErrorLabel" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 12
+text = ""
+horizontal_alignment = 1
+modulate = Color(1, 0.5, 0.5, 1)
+
+[node name="Title" type="Label" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 16
+text = "SHOP"
+horizontal_alignment = 1
+
+[node name="Items" type="HBoxContainer" parent="Panel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="ChairBox" type="VBoxContainer" parent="Panel/VBox/Items"]
+custom_minimum_size = Vector2(120, 150)
+layout_mode = 2
+alignment = 1
+
+[node name="ChairPreview" type="Control" parent="Panel/VBox/Items/ChairBox"]
+custom_minimum_size = Vector2(120, 110)
+layout_mode = 2
+
+[node name="ChairInstance" parent="Panel/VBox/Items/ChairBox/ChairPreview" instance=ExtResource("2_chair")]
+process_mode = 4
+z_index = 4
+position = Vector2(54, 45)
+scale = Vector2(0.8, 0.8)
+
+[node name="ChairText" type="Label" parent="Panel/VBox/Items/ChairBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 14
+text = "TABLE
+1000¥"
+horizontal_alignment = 1
+
+[node name="ChairBuy" type="Button" parent="Panel/VBox/Items/ChairBox"]
+modulate = Color(0.5, 1, 0.5, 1)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 14
+text = "BUY"
+
+[node name="MakerBox" type="VBoxContainer" parent="Panel/VBox/Items"]
+custom_minimum_size = Vector2(120, 150)
+layout_mode = 2
+alignment = 1
+
+[node name="MakerPreview" type="Control" parent="Panel/VBox/Items/MakerBox"]
+custom_minimum_size = Vector2(120, 110)
+layout_mode = 2
+
+[node name="MakerInstance" parent="Panel/VBox/Items/MakerBox/MakerPreview" instance=ExtResource("3_maker")]
+process_mode = 4
+position = Vector2(67, 54)
+scale = Vector2(1.0213152, 1.0213152)
+
+[node name="MakerText" type="Label" parent="Panel/VBox/Items/MakerBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 14
+text = "RAMEN MAKER
+2000¥"
+horizontal_alignment = 1
+
+[node name="MakerBuy" type="Button" parent="Panel/VBox/Items/MakerBox"]
+modulate = Color(0.5, 1, 0.5, 1)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 14
+text = "BUY"
+
+[node name="ExitButton" type="Button" parent="Panel/VBox"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_font")
+theme_override_font_sizes/font_size = 14
+text = "EXIT"

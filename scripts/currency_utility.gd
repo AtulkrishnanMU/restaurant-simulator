@@ -4,8 +4,15 @@ class_name CurrencyUtility
 static func collect_currency(amount: int, area: Node, body: Node) -> void:
 	if body is Player:
 		var s := AudioStreamPlayer.new()
-		s.stream = load("res://assets/sounds/cash.ogg")
-		s.volume_db = 0
+		# Choose sound based on what is being collected:
+		# coins (tip coins) vs. cash bills from NPCs.
+		var sound_path := "res://assets/sounds/cash.mp3"
+		if amount > 0:
+			# Positive amount = coin pickup (tip coins)
+			sound_path = "res://assets/sounds/coin.wav"
+		s.stream = load(sound_path)
+		# Slightly quieter cash/coin sound (about 25% down)
+		s.volume_db = -10.0
 		if area and area.get_tree():
 			area.get_tree().current_scene.add_child(s)
 		s.play()

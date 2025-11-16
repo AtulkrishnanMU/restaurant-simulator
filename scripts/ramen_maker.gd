@@ -3,15 +3,16 @@ extends Area2D
 @export var cook_time_seconds: float = 5.0
 @export var spawn_offset: Vector2 = Vector2(24, 0)
 @export var ramen_scene: PackedScene = preload("res://scenes/ramen.tscn")
+@export var placement_radius: float = 28.0
 
 var _is_cooking: bool = false
-var _cook_tween: Tween
 @onready var cook_bar: Node2D = $CookBar
 var _player_inside: bool = false
 var _progress: float = 0.0
 var _player: Player = null
 var _spawn_unlocked_once: bool = false
 var _cook_audio: AudioStreamPlayer = null
+var _is_ghost: bool = false
 
 func _ready():
 	body_entered.connect(_on_body_entered)
@@ -23,6 +24,9 @@ func _ready():
 			cook_bar.value = 0.0
 
 func _on_body_entered(body: Node) -> void:
+	# Ignore collisions while this maker is a placement ghost
+	if _is_ghost:
+		return
 	if _is_cooking:
 		# If already cooking, just mark overlap for resume
 		if body is Player:
@@ -56,7 +60,8 @@ func _start_cooking():
 	_start_cooking_audio()
 
 func _process(delta: float) -> void:
-	if not _is_cooking:
+	# Do not cook while in ghost/placement mode
+	if _is_ghost or not _is_cooking:
 		return
 	if not _player_inside:
 		# Pause audio when player leaves the maker
@@ -171,7 +176,8 @@ func _start_cooking_audio():
 	var stream := load(path)
 	if stream:
 		_cook_audio.stream = stream
-		_cook_audio.volume_db = -2.0
+		# Start silent and fade in quickly
+		_cook_audio.volume_db = -24.0
 		# Compute random start so we have at least cook_time_seconds of audio remaining
 		var total_len := 0.0
 		if stream is AudioStream:
@@ -181,9 +187,43 @@ func _start_cooking_audio():
 			start_pos = randf_range(0.0, max(0.0, total_len - cook_time_seconds))
 		add_child(_cook_audio)
 		_cook_audio.play(start_pos)
+		# Fade in to target volume
+		var tween := create_tween()
+		# Small fade-in, e.g. 0.2 seconds
+		tween.tween_property(_cook_audio, "volume_db", -2.0, 0.2)
 
 func _stop_cooking_audio():
 	if _cook_audio:
-		_cook_audio.stop()
-		_cook_audio.queue_free()
-		_cook_audio = null
+		# Fade out then stop and free
+		var tween := create_tween()
+		var player := _cook_audio
+		tween.tween_property(player, "volume_db", -30.0, 0.25)
+		tween.tween_callback(func():
+			if player:
+				player.stop()
+				player.queue_free()
+			if _cook_audio == player:
+				_cook_audio = null
+		)
+
+func set_ghost_state(is_ghost: bool) -> void:
+	_is_ghost = is_ghost
+
+func _input_event(_viewport: Viewport, event: InputEvent, _shape_idx: int) -> void:
+	# Always allow relocating the existing ramen maker.
+	# If it is currently cooking, cancel cooking cleanly before moving.
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		if _is_cooking:
+			_is_cooking = false
+			_progress = 0.0
+			if cook_bar:
+				cook_bar.visible = false
+				if "value" in cook_bar:
+					cook_bar.value = 0.0
+			_stop_cooking_audio()
+		var game := get_tree().get_root().get_node_or_null("Game")
+		if not game:
+			return
+		var ui := game.get_node_or_null("UI")
+		if ui and "start_relocate_existing" in ui:
+			ui.start_relocate_existing(self)

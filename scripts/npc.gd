@@ -17,6 +17,8 @@ signal finished_eating
 @onready var anim = $AnimatedSprite2D
 @onready var speech_bubble: Control = null
 @onready var body_collider: CollisionShape2D = $CollisionShape2D
+var walk_player: AudioStreamPlayer2D
+var walk_pitch_timer: float = 0.0
 var eating_player: AudioStreamPlayer2D = null
 
 var leaving := false
@@ -25,16 +27,33 @@ var entering := false  # Flag for entering the screen
 var moving_to_chair := false  # Flag for moving to a chair
 var waiting_for_chair := false  # Flag for waiting when no chairs available
 var seated := false  # Flag for when NPC is at a chair
-var target_chair: Chair = null  # The chair this NPC is assigned to
+var target_chair = null  # The chair this NPC is assigned to
 var target_position: Vector2  # Where the NPC stops (chair position)
 var wait_check_timer := 0.0  # Timer for checking chairs while waiting
 const WAIT_CHECK_INTERVAL := 0.5  # Check for chairs every 0.5 seconds when waiting
+var wait_origin: Vector2 = Vector2.ZERO  # Where the NPC should stand while waiting
+
+# Wandering while waiting
+var wander_dir: Vector2 = Vector2.ZERO
+var wander_timer: float = 0.0
+const WANDER_CHANGE_INTERVAL_MIN := 1.0
+const WANDER_CHANGE_INTERVAL_MAX := 3.0
 
 # Detour state for obstacle avoidance during exit
 var detouring := false
 var detour_dir := Vector2.ZERO
 var detour_time := 0.0
 const DETOUR_DURATION := 0.6
+
+# Movement detour (while heading to chair) for dead-end avoidance
+var move_detouring := false
+var move_detour_dir := Vector2.ZERO
+var move_detour_time := 0.0
+const MOVE_DETOUR_DURATION := 0.5
+var _prev_pos: Vector2 = Vector2.ZERO
+var _stuck_time := 0.0
+const STUCK_DISTANCE_EPS := 0.5
+const STUCK_TIME_THRESHOLD := 0.35
 
 # Randomized pathing
 var path_points: Array[Vector2] = []
@@ -55,16 +74,25 @@ const THANK_MESSAGES = [
 func _ready():
 	if interaction_area:
 		print("NPC has InteractionArea!")
-		interaction_area.connect("body_entered", Callable(self, "_on_body_entered"))
+		if not interaction_area.is_connected("body_entered", Callable(self, "_on_body_entered")):
+			interaction_area.connect("body_entered", Callable(self, "_on_body_entered"))
 	else:
 		print("⚠️ NPC missing InteractionArea!")
 	
 	# Capture initial ramen requirement set by spawner
 	if initial_ramen_needed == 0:
 		initial_ramen_needed = ramen_needed
+	# Prepare walking audio
+	walk_player = AudioStreamPlayer2D.new()
+	walk_player.bus = "Master"
+	var walk_path := "res://assets/sounds/walking.mp3"
+	if ResourceLoader.exists(walk_path):
+		walk_player.stream = load(walk_path)
+		add_child(walk_player)
 	
 	# Find a free chair
 	find_chair()
+	_prev_pos = position
 
 func _process(delta):
 	_update_bubble_position()
@@ -88,44 +116,104 @@ func _physics_process(delta: float) -> void:
 
 	# Handle moving to chair
 	if moving_to_chair and target_chair and not seated:
-		var chair_pos = target_chair.global_position
-		# Steering rule:
-		# - If NPC collider Y is above (less than) chair Y, keep a circular offset from the chair
-		#   and target a point below the chair at 'chair_keep_distance'. Do not enter the radius.
-		# - Once NPC collider Y is below (>=) chair Y, move straight to the chair and sit.
-		var npc_col_global_y := global_position.y
-		if body_collider:
-			npc_col_global_y = (global_position + body_collider.position).y
-		var chair_y: float = chair_pos.y
-		if npc_col_global_y < chair_y:
-			# Above the chair: keep distance and aim to the point directly below the chair on the circle
-			var to_chair: Vector2 = chair_pos - global_position
-			var dist: float = to_chair.length()
-			# If too close to the chair while above it, first push out to the rim
-			if dist < chair_keep_distance - 0.5:
-				var away: Vector2 = -(to_chair / max(dist, 0.001))
-				var rim_point: Vector2 = chair_pos + away * chair_keep_distance
-				_move_towards(rim_point, delta)
-			else:
-				# Target a point directly below the chair at the keep distance
-				var below_point: Vector2 = chair_pos + Vector2(0, chair_keep_distance)
-				_move_towards(below_point, delta)
-			# Clear any old randomized path so we fully follow this rule
-			path_points.clear()
-			path_index = 0
+		var chair_pos: Vector2 = target_chair.global_position
+		# If the target chair became occupied by a *different* NPC before we arrived,
+		# abandon this chair and go back to waiting. If we are the occupant, we
+		# continue so the existing seating logic can run as before.
+		if "is_occupied" in target_chair and target_chair.is_occupied:
+			var occupied_by_self: bool = ("occupied_by" in target_chair and target_chair.occupied_by == self)
+			if not occupied_by_self:
+				_abandon_chair_and_return_to_wait()
+				return
+		# If currently detouring due to being stuck, follow detour briefly
+		if move_detouring:
+			var motion_detour := move_detour_dir * move_speed * delta
+			move_and_collide(motion_detour)
+			move_detour_time -= delta
+			if move_detour_time <= 0.0:
+				move_detouring = false
 		else:
-			# Now below the chair: go straight to the chair
-			_move_towards(chair_pos, delta)
-			if position.distance_to(chair_pos) < 6.0:
-				position = chair_pos
-				moving_to_chair = false
-				seated = true
-				if anim and anim.sprite_frames and anim.sprite_frames.has_animation("IDLE"):
-					anim.play("IDLE")
+			# Steering rule:
+			# - If NPC collider Y is above (less than) chair Y, keep a circular offset from the chair
+			#   and target a point below the chair at 'chair_keep_distance'. Do not enter the radius.
+			# - Once NPC collider Y is below (>=) chair Y, move straight to the chair and sit.
+			var npc_col_global_y: float = global_position.y
+			if body_collider:
+				npc_col_global_y = (global_position + body_collider.position).y
+			var chair_y: float = float(chair_pos.y)
+			if npc_col_global_y < chair_y:
+				# Above the chair: keep distance and aim to the point directly below the chair on the circle
+				var to_chair: Vector2 = chair_pos - global_position
+				var dist: float = to_chair.length()
+				# If too close to the chair while above it, first push out to the rim
+				if dist < chair_keep_distance - 0.5:
+					var away: Vector2 = -(to_chair / max(dist, 0.001))
+					var rim_point: Vector2 = chair_pos + away * chair_keep_distance
+					_move_towards(rim_point, delta)
 				else:
-					anim.stop()
-				update_speech_bubble()
-				print("NPC arrived at chair and is now seated")
+					# Target a point directly below the chair at the keep distance
+					var below_point: Vector2 = chair_pos + Vector2(0, chair_keep_distance)
+					_move_towards(below_point, delta)
+				# Clear any old randomized path so we fully follow this rule
+				path_points.clear()
+				path_index = 0
+			else:
+				# Now below the chair: go straight to the chair
+				_move_towards(chair_pos, delta)
+				if position.distance_to(chair_pos) < 6.0:
+					position = chair_pos
+					moving_to_chair = false
+					seated = true
+					if anim and anim.sprite_frames and anim.sprite_frames.has_animation("IDLE"):
+						anim.play("IDLE")
+					else:
+						anim.stop()
+					update_speech_bubble()
+					print("NPC arrived at chair and is now seated")
+
+		# Dead-end detection: if not moving enough for a short time while trying to walk, detour
+		var moved_dist := position.distance_to(_prev_pos)
+		if moved_dist < STUCK_DISTANCE_EPS:
+			_stuck_time += delta
+		else:
+			_stuck_time = 0.0
+		if _stuck_time >= STUCK_TIME_THRESHOLD and not move_detouring:
+			# Pick a perpendicular direction to current target to sidestep the obstacle
+			var to_target: Vector2 = (chair_pos - position)
+			if to_target.length() > 0.001:
+				var perp := Vector2(-to_target.y, to_target.x).normalized()
+				if randf() < 0.5:
+					perp = -perp
+				move_detouring = true
+				move_detour_dir = perp
+				move_detour_time = MOVE_DETOUR_DURATION
+				_stuck_time = 0.0
+
+	# While waiting for a chair, stay (or return) to the recorded wait_origin.
+	# This keeps NPCs from crowding around a chair that was taken by someone else,
+	# but instead of standing still, they wander around the area.
+	if waiting_for_chair and not leaving and not entering and not moving_to_chair:
+		# Initialize a wander direction if needed
+		if wander_dir == Vector2.ZERO or wander_timer <= 0.0:
+			# Pick a random non-zero direction
+			var angle := randf() * TAU
+			wander_dir = Vector2(cos(angle), sin(angle)).normalized()
+			wander_timer = randf_range(WANDER_CHANGE_INTERVAL_MIN, WANDER_CHANGE_INTERVAL_MAX)
+		# Move in the current wander direction
+		var wander_speed := move_speed * 0.6
+		var motion := wander_dir * wander_speed * delta
+		var hit := move_and_collide(motion)
+		wander_timer -= delta
+		# If we hit something (wall, NPC, etc.), immediately pick a new direction
+		if hit != null:
+			wander_timer = 0.0
+			# Small nudge away from the collision normal
+			var n: Vector2 = hit.get_normal()
+			wander_dir = (wander_dir.bounce(n)).normalized()
+		# Play idle or walk animation as appropriate
+		if anim and anim.sprite_frames:
+			if anim.sprite_frames.has_animation("WALK_FRONT"):
+				anim.play("WALK_FRONT")
 
 	# Existing leaving movement
 	if leaving:
@@ -163,6 +251,30 @@ func _physics_process(delta: float) -> void:
 			if speech_bubble and is_instance_valid(speech_bubble):
 				speech_bubble.queue_free()
 			queue_free()
+	# Walking sound: play while NPC is actually moving (entering, going to chair, or leaving)
+	if walk_player and walk_player.stream:
+		var moved_dist := position.distance_to(_prev_pos)
+		var is_moving := moved_dist > 0.1 and (entering or (moving_to_chair and not seated) or leaving)
+		if is_moving:
+			if not walk_player.playing:
+				# Pick an initial random pitch when starting to walk
+				walk_player.pitch_scale = randf_range(0.9, 1.1)
+				walk_player.play()
+			walk_pitch_timer += delta
+			if walk_pitch_timer >= 1.0:
+				walk_pitch_timer = 0.0
+				walk_player.pitch_scale = randf_range(0.9, 1.1)
+			# Adjust volume based on vertical position: higher on screen = quieter
+			var view_h := get_viewport_rect().size.y
+			if view_h > 0.0:
+				var ny: float = clamp(global_position.y / view_h, 0.0, 1.0)
+				walk_player.volume_db = lerp(-12.0, -2.0, ny)
+		else:
+			if walk_player.playing:
+				walk_player.stop()
+			walk_pitch_timer = 0.0
+	# Track previous position for stuck detection and walking detection
+	_prev_pos = position
 
 func _move_towards(target: Vector2, delta: float) -> void:
 	var to := target - position
@@ -176,10 +288,10 @@ func _move_towards(target: Vector2, delta: float) -> void:
 func _update_draw_order() -> void:
 	if not target_chair:
 		return
-	var npc_col_global_y := global_position.y
+	var npc_col_global_y: float = global_position.y
 	if body_collider:
 		npc_col_global_y = (global_position + body_collider.position).y
-	var chair_y := target_chair.global_position.y
+	var chair_y: float = float(target_chair.global_position.y)
 	if npc_col_global_y < chair_y:
 		z_index = target_chair.z_index - 1
 	else:
@@ -197,8 +309,27 @@ func find_chair():
 		print("WARNING: ChairManager not found! NPC will wait.")
 		waiting_for_chair = true
 		return
+	# If any other NPC is already heading to a chair, wait this turn.
+	# This enforces a simple first-come, first-served behavior where only
+	# one NPC at a time is assigned to go sit, even if multiple chairs are free.
+	for child in game_node.get_children():
+		if child is NPC and child != self and child.moving_to_chair:
+			# Another NPC is already on the way to a chair; keep waiting.
+			if not waiting_for_chair:
+				waiting_for_chair = true
+				moving_to_chair = false
+				wait_check_timer = 0.0
+				wait_origin = position
+			print("Another NPC is already moving to a chair;", self, "will wait.")
+			return
 	
-	var free_chair = chair_manager.get_free_chair()
+	# First-come, first-served: ask the manager to assign a chair only if this NPC
+	# is at the front of the waiting queue.
+	var free_chair = null
+	if "request_chair_for" in chair_manager:
+		free_chair = chair_manager.request_chair_for(self)
+	else:
+		free_chair = chair_manager.get_free_chair()
 	if free_chair and not free_chair.is_occupied:
 		target_chair = free_chair
 		target_position = free_chair.global_position
@@ -207,9 +338,6 @@ func find_chair():
 		wait_check_timer = 0.0  # Reset wait timer
 		path_points.clear()
 		path_index = 0
-		
-		# Reserve the chair immediately
-		free_chair.occupy(self)
 		
 		# Start walking animation
 		if anim and anim.sprite_frames and anim.sprite_frames.has_animation("WALK_FRONT"):
@@ -223,9 +351,25 @@ func find_chair():
 			waiting_for_chair = true
 			moving_to_chair = false
 			wait_check_timer = 0.0
+			wait_origin = position
+			if "register_waiting_npc" in chair_manager:
+				chair_manager.register_waiting_npc(self)
 			if anim and anim.sprite_frames and anim.sprite_frames.has_animation("IDLE"):
 				anim.play("IDLE")
 			print("No free chairs available, NPC waiting...")
+
+func _abandon_chair_and_return_to_wait() -> void:
+	# Stop moving toward the now-occupied chair and resume waiting.
+	moving_to_chair = false
+	waiting_for_chair = true
+	wait_check_timer = 0.0
+	# If we never recorded a wait origin (e.g., found a chair immediately),
+	# use the current position so the NPC just waits here.
+	if wait_origin == Vector2.ZERO:
+		wait_origin = position
+	# Switch to a walking animation while heading back, if available.
+	if anim and anim.sprite_frames and anim.sprite_frames.has_animation("WALK_FRONT"):
+		anim.play("WALK_FRONT")
 
 func _on_body_entered(body):
 	if leaving or eating or entering or not seated:  # Only interact when seated
@@ -311,27 +455,51 @@ func _play_eating_segment(duration: float) -> void:
 	if length <= 0.0:
 		length = max(2.0, duration + 0.1) # fallback if length is unknown
 	var start_offset := randf_range(0.0, max(0.0, length - duration))
+	# Start quieter and fade in quickly
+	player.volume_db = -18.0
+	# Slightly vary pitch each time so eating doesn't sound identical
+	player.pitch_scale = randf_range(0.9, 1.1)
 	player.play(start_offset)
+	var fade_in_tween := create_tween()
+	fade_in_tween.tween_property(player, "volume_db", -4.0, 0.15)
 	var timer := get_tree().create_timer(duration)
 	timer.timeout.connect(func():
 		if is_instance_valid(player):
-			player.stop()
+			# Fade out then stop
+			var fade_out_tween := create_tween()
+			var p := player
+			fade_out_tween.tween_property(p, "volume_db", -24.0, 0.2)
+			fade_out_tween.tween_callback(func():
+				if is_instance_valid(p):
+					p.stop()
+			)
 	)
 
 func drop_cash():
-	if cash_scene:
-		# Drop one cash per ramen served; each cash's value is defined by HUD price
-		var drops: int = max(1, initial_ramen_needed)
-		for i in range(drops):
-			var cash = cash_scene.instantiate()
-			cash.position = _random_drop_position_away_from_chair()
-			get_parent().add_child(cash)
-			print("Cash dropped at:", cash.position)
+	# Drop one cash per ramen originally ordered
+	if not cash_scene:
+		return
+	var count: int = max(1, initial_ramen_needed)
+	for i in range(count):
+		var cash = cash_scene.instantiate()
+		cash.position = _random_drop_position_away_from_chair()
+		get_parent().add_child(cash)
+	print("Cash dropped:", count, "bundle(s)")
 
 func drop_tip_coins():
 	if coin_scene:
-		var tip_count: int = randi_range(0, 3)
-		if tip_count > 0:
+		# Check how many NPCs have been served so far; first 5 customers never tip
+		var game := get_tree().get_root().get_node("Game")
+		if not game:
+			return
+			
+		var pop := game.get_node_or_null("PopularityManager")
+		if pop and "get_npcs_served" in pop:
+			if pop.get_npcs_served() < 5:
+				return
+		# After the first 5, only some customers should tip; e.g. ~30% chance
+		if randf() < 0.3:
+			var tip_count: int = randi_range(1, 3)
 			for i in range(tip_count):
 				var coin = coin_scene.instantiate()
 				coin.position = _random_drop_position_away_from_chair()
@@ -365,7 +533,7 @@ func _build_random_path_to(dest: Vector2) -> void:
 func _random_drop_position_away_from_chair() -> Vector2:
 	var base := global_position
 	if target_chair:
-		var center := target_chair.global_position
+		var center: Vector2 = target_chair.global_position
 		var min_dist := 24.0  # keep drops outside chair area
 		var angle := deg_to_rad(randf_range(200.0, 340.0))  # prefer below/front of chair
 		var dist := randf_range(min_dist, min_dist + 30.0)

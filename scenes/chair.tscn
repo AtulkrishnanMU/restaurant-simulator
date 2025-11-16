@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://fcemrw1w5u35"]
+[gd_scene load_steps=7 format=3 uid="uid://fcemrw1w5u35"]
 
 [ext_resource type="Script" uid="uid://b0uwv6em3xuc4" path="res://scripts/chair.gd" id="1_chair"]
 [ext_resource type="Texture2D" uid="uid://dmaltdg3ositj" path="res://assets/sprites/objects/chair.png" id="2_3fp06"]
@@ -6,6 +6,9 @@
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_chair"]
 size = Vector2(41.1875, 45.90625)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hxd06"]
+size = Vector2(109, 100)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_table"]
 size = Vector2(82.625, 22)
@@ -17,6 +20,11 @@ script = ExtResource("1_chair")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(3, 7)
 shape = SubResource("RectangleShape2D_chair")
+
+[node name="PlacementShape" type="CollisionShape2D" parent="."]
+position = Vector2(3.5, 15)
+shape = SubResource("RectangleShape2D_hxd06")
+disabled = true
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 z_index = -1

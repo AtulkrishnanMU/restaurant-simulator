@@ -20,7 +20,8 @@ func _on_body_entered(body):
 			var sound_path = "res://assets/sounds/pop.mp3"
 			if ResourceLoader.exists(sound_path):
 				s.stream = load(sound_path)
-				s.volume_db = 0
+				# Slightly quieter pop (about 25% down)
+				s.volume_db = -10.0
 				get_tree().current_scene.add_child(s)
 				s.play()
 				s.finished.connect(s.queue_free)

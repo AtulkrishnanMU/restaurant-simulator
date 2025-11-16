@@ -71,8 +71,8 @@ func update_popularity(popularity: int) -> void:
 	# Increase the slider's max with popularity (initially 50, grows by popularity)
 	if cash_slider:
 		cash_slider.max_value = 50 + popularity
-		var snapped: int = int(round(cash_slider.max_value / 5.0) * 5)
-		cash_slider.max_value = snapped
+		var snapped_max: int = int(round(cash_slider.max_value / 5.0) * 5)
+		cash_slider.max_value = snapped_max
 		# Ensure current value stays within bounds and snapped to nearest 5
 		var clamped: float = clamp(float(cash_slider.value), float(cash_slider.min_value), float(cash_slider.max_value))
 		var snapped_val: int = int(round(clamped / 5.0) * 5)
@@ -86,9 +86,9 @@ func get_cash_value() -> int:
 	return cash_value
 
 func _on_cash_slider_value_changed(value: float) -> void:
-	var snapped: int = int(round(value / 5.0) * 5)
-	if snapped != int(cash_slider.value):
-		cash_slider.value = snapped
-	cash_value = snapped
+	var snapped_val: int = int(round(value / 5.0) * 5)
+	if snapped_val != int(cash_slider.value):
+		cash_slider.value = snapped_val
+	cash_value = snapped_val
 	if cash_value_label:
 		cash_value_label.text = PRICE_TEXT % cash_value
