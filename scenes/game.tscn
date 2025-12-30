@@ -143,10 +143,10 @@ npc_scene = ExtResource("7_gee14")
 position = Vector2(-4.0000153, 8.000008)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
-position = Vector2(3.3742266, 5.0333824)
+position = Vector2(224.62758, 104.11922)
 rotation = -3.1415925
-scale = Vector2(23.005493, 23.612112)
-zoom = Vector2(1.275, 1.275)
+scale = Vector2(107.07741, 144.98285)
+zoom = Vector2(0.595, 0.595)
 position_smoothing_enabled = true
 
 [node name="UI" parent="." instance=ExtResource("13_kvuet")]
